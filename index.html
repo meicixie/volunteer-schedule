@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>志工服務時間表</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',Arial,sans-serif;background:#f8f8f7;color:#1a1a18;font-size:14px;line-height:1.6}
+.topbar{background:#fff;border-bottom:1px solid #e5e5e2;padding:0 1.25rem;display:flex;align-items:center;gap:.75rem;height:56px;position:sticky;top:0;z-index:100;flex-wrap:wrap}
+.topbar h1{font-size:15px;font-weight:500;flex:1;white-space:nowrap}
+.container{max-width:1100px;margin:0 auto;padding:1.25rem}
+.tabs{display:flex;gap:4px;border-bottom:1px solid #e5e5e2;margin-bottom:1.25rem;flex-wrap:wrap}
+.tab{padding:7px 13px;font-size:13px;cursor:pointer;border:none;background:none;color:#888;border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .15s}
+.tab.active{color:#1a1a18;border-bottom-color:#1a1a18;font-weight:500}
+.tab:hover:not(.active){color:#1a1a18}
+.section{display:none}.section.active{display:block}
+.card{background:#fff;border:1px solid #e5e5e2;border-radius:12px;padding:.875rem 1.125rem;margin-bottom:.875rem}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:9px}
+select,input[type=text],input[type=date],input[type=number],input[type=password]{font-size:13px;padding:5px 9px;border-radius:7px;border:1px solid #d0d0cc;background:#fff;color:#1a1a18;outline:none}
+select:focus,input:focus{border-color:#888}
+.btn{font-size:13px;padding:5px 13px;border-radius:7px;border:1px solid #d0d0cc;background:#fff;color:#1a1a18;cursor:pointer;transition:background .15s;white-space:nowrap}
+.btn:hover{background:#f3f3f0}
+.btn-primary{background:#1a1a18;color:#fff;border-color:#1a1a18}
+.btn-primary:hover{background:#333}
+.btn-danger{border-color:#c53030;color:#c53030}
+.btn-danger:hover{background:#fff5f5}
+.btn-sm{padding:2px 9px;font-size:11px}
+/* 班表主體 */
+.sched-wrap{overflow-x:auto;margin-bottom:1rem}
+.sched-table{border-collapse:collapse;min-width:700px;width:100%;font-size:12px}
+.sched-table th{background:#f8f8f7;padding:7px 8px;text-align:center;font-weight:500;font-size:11px;color:#666;border:1px solid #e5e5e2;white-space:nowrap}
+.sched-table td{border:1px solid #e5e5e2;padding:5px 6px;vertical-align:top;background:#fff;min-width:110px}
+.sched-table .slot-label{background:#f8f8f7;font-weight:500;font-size:11px;color:#555;white-space:nowrap;text-align:right;min-width:90px;width:90px}
+.sched-table .closed{background:#f8f8f7;color:#ccc;font-size:11px;text-align:center}
+.vol-row{display:flex;align-items:center;gap:4px;min-height:22px;font-size:12px;padding:2px 0}
+.absent-mark{text-decoration:line-through;color:#aaa}
+.sub-row{font-size:11px;color:#065F46;display:flex;align-items:center;gap:3px}
+.badge{display:inline-block;font-size:10px;padding:1px 6px;border-radius:20px;font-weight:500;white-space:nowrap}
+.badge-absent{background:#FEF3C7;color:#92400E}
+.badge-sub{background:#D1FAE5;color:#065F46}
+/* 管理員排班編輯 */
+.edit-cell{display:flex;flex-direction:column;gap:3px}
+.edit-cell select{font-size:11px;padding:2px 4px;width:100%}
+.tbl-wrap{overflow-x:auto;border:1px solid #e5e5e2;border-radius:12px;margin-bottom:1rem}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:#f8f8f7;padding:7px 8px;text-align:left;font-weight:500;font-size:11px;color:#666;border-bottom:1px solid #e5e5e2;white-space:nowrap}
+td{padding:6px 8px;border-bottom:1px solid #f0f0ee;vertical-align:top;color:#1a1a18}
+tr:last-child td{border-bottom:none}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:1.25rem}
+.metric{background:#f8f8f7;border-radius:8px;padding:.75rem;text-align:center}
+.metric-num{font-size:19px;font-weight:500}
+.metric-label{font-size:11px;color:#888;margin-top:3px}
+.week-hdr{background:#f8f8f7;border-radius:8px;padding:6px 12px;margin-bottom:6px;font-size:13px;font-weight:500;color:#666}
+.filter-row{display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;align-items:center}
+h3{font-size:14px;font-weight:500;margin-bottom:.5rem}
+.sep{height:1px;background:#e5e5e2;margin:1.125rem 0}
+.empty{text-align:center;padding:2rem;color:#888;font-size:13px}
+.info-text{font-size:12px;color:#888}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a18;color:#fff;padding:9px 18px;border-radius:8px;font-size:13px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:16px;padding:1.5rem;width:310px;box-shadow:0 8px 32px rgba(0,0,0,.15)}
+.modal h3{margin-bottom:1rem}
+.role-badge{font-size:12px;padding:3px 10px;border-radius:20px;background:#EDE9FE;color:#4C1D95;font-weight:500}
+lbl{font-size:13px;color:#666;display:inline-block;min-width:55px}
+</style>
+</head>
+<body>
+
+<script>
+const SUPABASE_URL = 'https://nvjdepggnyeoblcpyqbz.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52amRlcGdnbnllb2JsY3B5cWJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NDc4NDcsImV4cCI6MjA5ODAyMzg0N30.afRQUJtveO5dpFX6xqj8HqrDu8jybu6jxVWXI5BUWbk';
+const ADMIN_PASSWORD = 'klps126';
+</script>
+
+<div class="topbar">
+  <h1><i class="ti ti-calendar-event" style="margin-right:6px"></i>志工服務時間表</h1>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <span id="role-badge"></span>
+    <button class="btn" id="admin-btn" onclick="openAdminModal()" style="font-size:12px">
+      <i class="ti ti-lock"></i> 管理員
+    </button>
+    <button class="btn btn-danger" id="exit-admin-btn" onclick="exitAdmin()" style="font-size:12px;display:none">
+      <i class="ti ti-logout"></i> 離開管理員
+    </button>
+  </div>
+</div>
+
+<div class="container">
+  <div id="no-config-warn" style="display:none;background:#FEF2F2;border:1px solid #FCA5A5;border-radius:10px;padding:.875rem 1rem;margin-bottom:1rem">
+    <p style="color:#DC2626;font-size:13px"><i class="ti ti-alert-triangle"></i> 請先在 index.html 頂部填入 Supabase URL 與 API Key</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="schedule" onclick="showTab('schedule')"><i class="ti ti-calendar"></i> 班表</button>
+    <button class="tab" data-tab="absence" onclick="showTab('absence')"><i class="ti ti-user-minus"></i> 請假</button>
+    <button class="tab" data-tab="substitute" onclick="showTab('substitute')"><i class="ti ti-user-plus"></i> 代班</button>
+    <button class="tab admin-only" data-tab="volunteers" onclick="showTab('volunteers')" style="display:none"><i class="ti ti-users"></i> 志工管理</button>
+    <button class="tab admin-only" data-tab="stats" onclick="showTab('stats')" style="display:none"><i class="ti ti-chart-bar"></i> 時數統計</button>
+  </div>
+
+  <!-- 班表 -->
+  <div id="sec-schedule" class="section active">
+    <div class="filter-row">
+      <select id="filter-week" onchange="renderSchedule()"></select>
+      <span style="margin-left:auto;font-size:12px;display:flex;gap:6px;align-items:center">
+        <span class="badge badge-absent">請假</span>
+        <span class="badge badge-sub">代班</span>
+        <span id="admin-edit-hint" style="display:none" class="info-text">管理員模式：點志工名字可編輯排班</span>
+      </span>
+    </div>
+    <div id="schedule-container"><div class="empty"><i class="ti ti-loader"></i> 載入中...</div></div>
+  </div>
+
+  <!-- 請假 -->
+  <div id="sec-absence" class="section">
+    <div class="card">
+      <h3>登記請假</h3>
+      <div class="row">
+        <lbl>週次</lbl>
+        <select id="abs-week" onchange="updateAbsDates()"></select>
+        <lbl>日期</lbl>
+        <select id="abs-date"></select>
+      </div>
+      <div class="row">
+        <lbl>時段</lbl>
+        <select id="abs-slot" onchange="updateAbsVolList()"></select>
+        <lbl>志工</lbl>
+        <select id="abs-vol"></select>
+      </div>
+      <div id="abs-vol-hint" class="info-text" style="margin-bottom:6px;padding-left:55px"></div>
+      <div class="row">
+        <lbl>原因</lbl>
+        <input type="text" id="abs-reason" placeholder="請假原因（選填）" style="width:180px">
+        <button class="btn btn-primary" onclick="addAbsence()">確認登記</button>
+      </div>
+    </div>
+    <div class="sep"></div>
+    <h3>請假紀錄</h3>
+    <div id="absence-list"></div>
+  </div>
+
+  <!-- 代班 -->
+  <div id="sec-substitute" class="section">
+    <div class="card">
+      <h3>登記代班</h3>
+      <div class="row">
+        <lbl style="min-width:70px">代替哪位</lbl>
+        <select id="sub-absent-select" onchange="updateSubInfo()" style="max-width:320px"></select>
+      </div>
+      <div id="sub-absent-info" class="info-text" style="margin-bottom:8px"></div>
+      <div class="row">
+        <lbl style="min-width:70px">代班志工</lbl>
+        <select id="sub-vol"></select>
+        <button class="btn btn-primary" onclick="addSubstitute()">確認代班</button>
+      </div>
+    </div>
+    <div class="sep"></div>
+    <h3>代班紀錄</h3>
+    <div id="substitute-list"></div>
+  </div>
+
+  <!-- 志工管理 -->
+  <div id="sec-volunteers" class="section">
+    <div class="card">
+      <h3>學期設定</h3>
+      <div class="row">
+        <lbl>第一天</lbl>
+        <input type="date" id="set-start-date">
+        <lbl>總週數</lbl>
+        <input type="number" id="set-total-weeks" style="width:65px" min="1" max="52">
+        <button class="btn btn-primary" onclick="saveSettings()">儲存</button>
+      </div>
+      <div id="semester-range" class="info-text" style="margin-top:4px"></div>
+    </div>
+    <div class="card">
+      <h3>新增志工</h3>
+      <div class="row">
+        <lbl>姓名</lbl>
+        <input type="text" id="new-vol-name" placeholder="志工姓名" style="width:120px">
+        <lbl>加入週次</lbl>
+        <select id="new-vol-start"></select>
+        <button class="btn btn-primary" onclick="addVolunteer()">新增</button>
+      </div>
+    </div>
+    <div class="sep"></div>
+    <h3>志工名單</h3>
+    <div id="vol-list"></div>
+  </div>
+
+  <!-- 時數統計 -->
+  <div id="sec-stats" class="section">
+    <div class="metrics" id="stats-metrics"></div>
+    <div class="sep"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:.75rem">
+      <h3 style="margin:0">各志工明細</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" onclick="exportStats()"><i class="ti ti-download"></i> 匯出統計 CSV</button>
+        <button class="btn btn-danger" onclick="clearSemesterRecords()"><i class="ti ti-trash"></i> 清空學期紀錄</button>
+      </div>
+    </div>
+    <div id="stats-detail"></div>
+  </div>
+</div>
+
+<!-- 管理員登入 -->
+<div class="modal-bg" id="admin-modal">
+  <div class="modal">
+    <h3><i class="ti ti-lock"></i> 管理員登入</h3>
+    <div style="margin-bottom:1rem">
+      <input type="password" id="admin-pw-input" placeholder="輸入管理員密碼" style="width:100%" onkeydown="if(event.key==='Enter')checkAdmin()">
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" onclick="closeAdminModal()">取消</button>
+      <button class="btn btn-primary" onclick="checkAdmin()">登入</button>
+    </div>
+    <div id="admin-error" style="color:#DC2626;font-size:12px;margin-top:8px"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── 常數 ──────────────────────────────────────────
+const SLOTS = ['08:30-10:30','10:00-12:00','13:30-16:00'];
+const SLOT_HRS = {'08:30-10:30':2,'10:00-12:00':2,'13:30-16:00':2.5};
+const DAY_NAMES = ['一','二','三','四','五'];
+// 週三（day=3）下午不排班
+const CLOSED = {3: ['13:30-16:00']};
+
+let isAdmin = false;
+let state = {
+  weeks: [], volunteers: [], assignments: {},
+  absences: [], substitutes: [],
+  settings: {startDate:'2025-09-01', totalWeeks:20}
+};
+
+// ── 工具 ──────────────────────────────────────────
+function fmtDate(d){return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`;}
+function fmtMD(d){return `${d.getMonth()+1}/${d.getDate()}`;}
+
+function isClosedSlot(dayIndex, slot){
+  // dayIndex: 0=週一…4=週五；day number: dayIndex+1
+  const day = dayIndex + 1;
+  return (CLOSED[day]||[]).includes(slot);
+}
+
+function generateWeeks(startDate, totalWeeks){
+  const base = new Date(startDate+'T00:00:00');
+  return Array.from({length:totalWeeks},(_,i)=>({
+    week: i+1,
+    days: Array.from({length:5},(_,d)=>{
+      const dt = new Date(base);
+      dt.setDate(base.getDate()+i*7+d);
+      return {full:fmtDate(dt), short:fmtMD(dt)};
+    })
+  }));
+}
+
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2400);
+}
+
+function getVolName(id){
+  const v=state.volunteers.find(x=>x.id===id);
+  return v?v.name:'—';
+}
+
+// ── Supabase API ───────────────────────────────────
+async function sb(method,table,body,query=''){
+  if(SUPABASE_URL.includes('填入')){
+    document.getElementById('no-config-warn').style.display='block';
+    throw new Error('尚未設定 Supabase');
+  }
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}${query}`,{
+    method,
+    headers:{
+      'apikey':SUPABASE_KEY,
+      'Authorization':'Bearer '+SUPABASE_KEY,
+      'Content-Type':'application/json',
+      'Prefer':'return=representation'
+    },
+    body: body?JSON.stringify(body):undefined
+  });
+  if(!res.ok){const e=await res.text();throw new Error(e);}
+  const txt=await res.text();
+  return txt?JSON.parse(txt):null;
+}
+const dbGet  = (t,q='')       => sb('GET',t,null,q);
+const dbPost = (t,b)          => sb('POST',t,b);
+const dbPatch= (t,b,q)        => sb('PATCH',t,b,q);
+const dbDel  = (t,q)          => sb('DELETE',t,null,q);
+
+// ── 載入資料 ──────────────────────────────────────
+async function loadAll(){
+  try{
+    const [vols,sets,asgn,abs,subs] = await Promise.all([
+      dbGet('volunteers','?order=created_at'),
+      dbGet('settings'),
+      dbGet('assignments'),
+      dbGet('absences','?order=created_at'),
+      dbGet('substitutes','?order=created_at')
+    ]);
+    state.volunteers = vols||[];
+    (sets||[]).forEach(s=>state.settings[s.key]=s.key==='totalWeeks'?parseInt(s.value):s.value);
+    // 轉成 {day_slot: {vol_id_1,vol_id_2}} 方便查
+    state.assignments = {};
+    (asgn||[]).forEach(a=>{
+      state.assignments[`${a.day}_${a.slot}`]={v1:a.vol_id_1,v2:a.vol_id_2};
+    });
+    state.absences   = abs||[];
+    state.substitutes= subs||[];
+    state.weeks = generateWeeks(state.settings.startDate, state.settings.totalWeeks);
+    fillWeekSelect('filter-week',true);
+    renderSchedule();
+  }catch(e){
+    document.getElementById('schedule-container').innerHTML=
+      `<div class="empty" style="color:#DC2626">載入失敗：${e.message}</div>`;
+  }
+}
+
+
+
+// ── 管理員 ────────────────────────────────────────
+function openAdminModal(){
+  document.getElementById('admin-modal').classList.add('open');
+  document.getElementById('admin-pw-input').value='';
+  document.getElementById('admin-error').textContent='';
+  setTimeout(()=>document.getElementById('admin-pw-input').focus(),100);
+}
+function closeAdminModal(){document.getElementById('admin-modal').classList.remove('open');}
+function checkAdmin(){
+  if(document.getElementById('admin-pw-input').value===ADMIN_PASSWORD){
+    isAdmin=true; closeAdminModal();
+    document.querySelectorAll('.admin-only').forEach(el=>el.style.display='');
+    document.getElementById('role-badge').innerHTML='<span class="role-badge"><i class="ti ti-shield"></i> 管理員</span>';
+    document.getElementById('admin-edit-hint').style.display='';
+    document.getElementById('admin-btn').style.display='none';
+    document.getElementById('exit-admin-btn').style.display='';
+    showToast('已進入管理員模式');
+    renderSchedule();
+  } else {
+    document.getElementById('admin-error').textContent='密碼錯誤';
+  }
+}
+function exitAdmin(){
+  isAdmin=false;
+  document.querySelectorAll('.admin-only').forEach(el=>el.style.display='none');
+  document.getElementById('role-badge').innerHTML='';
+  document.getElementById('admin-edit-hint').style.display='none';
+  document.getElementById('admin-btn').style.display='';
+  document.getElementById('exit-admin-btn').style.display='none';
+  // 若目前在管理員專屬頁面，切回班表
+  const activeTab=document.querySelector('.tab.active');
+  if(activeTab&&['volunteers','stats'].includes(activeTab.dataset.tab)){
+    showTab('schedule');
+  } else {
+    renderSchedule();
+  }
+  showToast('已切換回一般瀏覽模式');
+}
+
+// ── 選單填充 ──────────────────────────────────────
+function fillWeekSelect(id,allOpt){
+  const el=document.getElementById(id); if(!el)return;
+  const cur=el.value;
+  el.innerHTML=(allOpt?'<option value="">所有週次</option>':'')+
+    state.weeks.map(w=>`<option value="${w.week}">第${w.week}週（${w.days[0].short}–${w.days[4].short}）</option>`).join('');
+  if(cur) el.value=cur;
+}
+function fillVolSelect(id,allOpt,defaultVid=''){
+  const el=document.getElementById(id); if(!el)return;
+  el.innerHTML=(allOpt?'<option value="">所有志工</option>':'')+
+    state.volunteers.map(v=>`<option value="${v.id}"${v.id===defaultVid?' selected':''}>${v.name}</option>`).join('');
+}
+
+// 取得目前請假表單選擇的 dayIndex（0=週一）
+function getAbsDayIndex(){
+  const dateVal=document.getElementById('abs-date').value;
+  const wkNum=parseInt(document.getElementById('abs-week').value);
+  const week=state.weeks.find(w=>w.week===wkNum);
+  if(week){
+    const idx=week.days.findIndex(d=>d.full===dateVal);
+    if(idx>=0) return idx;
+  }
+  return 0;
+}
+
+// 請假時段選單：過濾掉休館時段
+function updateAbsSlots(){
+  const dayIndex=getAbsDayIndex();
+  const el=document.getElementById('abs-slot');
+  el.innerHTML=SLOTS
+    .filter(s=>!isClosedSlot(dayIndex,s))
+    .map(s=>`<option value="${s}">${s}（${SLOT_HRS[s]}h）</option>`)
+    .join('');
+  updateAbsVolList();
+}
+
+// 請假志工選單：只顯示該格排班的兩位志工，預設空白
+function updateAbsVolList(){
+  const dayIndex=getAbsDayIndex();
+  const slot=document.getElementById('abs-slot').value;
+  const key=`${dayIndex+1}_${slot}`;
+  const asgn=state.assignments[key]||{v1:'',v2:''};
+  const vids=[asgn.v1,asgn.v2].filter(Boolean);
+  const el=document.getElementById('abs-vol');
+  const hint=document.getElementById('abs-vol-hint');
+  if(vids.length===0){
+    el.innerHTML='<option value="">— 此時段尚未排班 —</option>';
+    hint.textContent='請先由管理員設定此時段的排班志工';
+  } else {
+    el.innerHTML='<option value="">— 請選擇志工 —</option>'+
+      vids.map(id=>{
+        const v=state.volunteers.find(x=>x.id===id);
+        return v?`<option value="${v.id}">${v.name}</option>`:'';
+      }).join('');
+    hint.textContent=`此時段排班志工：${vids.map(id=>getVolName(id)).join('、')}`;
+  }
+}
+
+function updateAbsDates(){
+  const wk=parseInt(document.getElementById('abs-week').value);
+  const week=state.weeks.find(w=>w.week===wk);
+  const el=document.getElementById('abs-date');
+  if(week&&el){
+    el.innerHTML=week.days.map((d,i)=>`<option value="${d.full}">週${DAY_NAMES[i]}（${d.short}）</option>`).join('');
+    el.onchange=updateAbsSlots;
+    updateAbsSlots();
+  }
+}
+
+// ── 班表渲染 ──────────────────────────────────────
+function showTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===name));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-'+name).classList.add('active');
+  if(name==='schedule') renderSchedule();
+  if(name==='absence'){
+    fillWeekSelect('abs-week',false);
+    updateAbsDates();
+    renderAbsenceList();
+  }
+  if(name==='substitute'){renderSubForm();renderSubList();}
+  if(name==='volunteers') renderVolunteers();
+  if(name==='stats') renderStats();
+}
+
+function renderSchedule(){
+  const wf=document.getElementById('filter-week')?.value;
+  const weeks=wf?state.weeks.filter(w=>w.week==wf):state.weeks;
+  if(!weeks.length){document.getElementById('schedule-container').innerHTML='<div class="empty">尚無班表資料</div>';return;}
+
+  let html='';
+  weeks.forEach(wk=>{
+    html+=`<div class="week-hdr">第 ${wk.week} 週　<span style="font-weight:400">${wk.days[0].full} ～ ${wk.days[4].full}</span></div>`;
+    html+=`<div class="sched-wrap"><table class="sched-table"><thead><tr><th>時段</th>`;
+    DAY_NAMES.forEach((d,i)=>html+=`<th>週${d}<br><span style="font-weight:400">${wk.days[i].short}</span></th>`);
+    html+=`</tr></thead><tbody>`;
+
+    SLOTS.forEach(slot=>{
+      html+=`<tr><td class="slot-label">${slot}</td>`;
+      wk.days.forEach((day,di)=>{
+        if(isClosedSlot(di,slot)){
+          html+=`<td class="closed">休館</td>`;
+          return;
+        }
+        const key=`${di+1}_${slot}`;
+        const asgn=state.assignments[key]||{v1:'',v2:''};
+        const absHere=state.absences.filter(a=>a.date===day.full&&a.slot===slot);
+        const subHere=state.substitutes.filter(s=>s.date===day.full&&s.slot===slot);
+
+        if(isAdmin){
+          // 管理員：顯示下拉選單直接編輯
+          html+=`<td><div class="edit-cell">
+            ${[['v1',asgn.v1],['v2',asgn.v2]].map(([pos,vid])=>`
+              <select onchange="quickSaveAssign(${di+1},'${slot}','${pos}',this.value)" style="font-size:11px;padding:2px 4px">
+                <option value="">—</option>
+                ${state.volunteers.map(v=>`<option value="${v.id}"${v.id===vid?' selected':''}>${v.name}</option>`).join('')}
+              </select>`).join('')}
+            ${absHere.map(a=>{
+              const sub=subHere.find(s=>s.absent_vol_id===a.vol_id);
+              return `<div style="font-size:10px;color:#92400E;margin-top:2px">
+                <span class="badge badge-absent">${getVolName(a.vol_id)}</span>
+                ${sub?`→ <span class="badge badge-sub">${getVolName(sub.sub_vol_id)}</span>`:'<span style="color:#DC2626">待代班</span>'}
+              </div>`;
+            }).join('')}
+          </div></td>`;
+        } else {
+          // 一般：顯示志工名字 + 請假代班狀態
+          html+=`<td>`;
+          [asgn.v1,asgn.v2].forEach(vid=>{
+            if(!vid){html+=`<div class="vol-row" style="color:#ccc">—</div>`;return;}
+            const abs=absHere.find(a=>a.vol_id===vid);
+            const sub=subHere.find(s=>s.absent_vol_id===vid);
+            if(abs){
+              html+=`<div class="vol-row"><span class="absent-mark">${getVolName(vid)}</span> <span class="badge badge-absent">請假</span></div>`;
+              if(sub) html+=`<div class="sub-row"><i class="ti ti-corner-down-right" style="font-size:10px"></i>${getVolName(sub.sub_vol_id)}<span class="badge badge-sub">代班</span></div>`;
+              else html+=`<div style="font-size:10px;color:#DC2626">待代班</div>`;
+            } else {
+              html+=`<div class="vol-row">${getVolName(vid)}</div>`;
+            }
+          });
+          html+=`</td>`;
+        }
+      });
+      html+=`</tr>`;
+    });
+    html+=`</tbody></table></div>`;
+  });
+  document.getElementById('schedule-container').innerHTML=html;
+}
+
+// 管理員：直接在班表下拉選單變更後立即存
+let saveQueue={};
+let saveTimer=null;
+function quickSaveAssign(day,slot,pos,vid){
+  const key=`${day}_${slot}`;
+  if(!saveQueue[key]) saveQueue[key]={...( state.assignments[key]||{v1:'',v2:''})};
+  saveQueue[key][pos]=vid;
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(async()=>{
+    for(const k of Object.keys(saveQueue)){
+      const [d,s]=k.split(/_(.+)/);
+      const a=saveQueue[k];
+      try{
+        await dbPatch('assignments',{vol_id_1:a.v1,vol_id_2:a.v2,updated_at:new Date().toISOString()},
+          `?day=eq.${d}&slot=eq.${encodeURIComponent(s)}`);
+        state.assignments[k]=a;
+      }catch(e){showToast('儲存失敗：'+e.message);}
+    }
+    saveQueue={};
+    showToast('排班已儲存');
+  },800);
+}
+
+// ── 請假 ─────────────────────────────────────────
+async function addAbsence(){
+  const wkNum=parseInt(document.getElementById('abs-week').value);
+  const date=document.getElementById('abs-date').value;
+  const slot=document.getElementById('abs-slot').value;
+  const volId=document.getElementById('abs-vol').value;
+  const reason=document.getElementById('abs-reason').value;
+  if(!date||!slot||!volId){alert('請填寫完整資訊');return;}
+  if(state.absences.find(a=>a.date===date&&a.slot===slot&&a.vol_id===volId)){alert('此志工在此時段已登記請假');return;}
+  // 計算 day（1–5）
+  const week=state.weeks.find(w=>w.week===wkNum);
+  const dayIndex=week?week.days.findIndex(d=>d.full===date):0;
+  const day=dayIndex+1;
+  try{
+    const id='a'+Date.now();
+    await dbPost('absences',{id,week:wkNum,date,day,slot,vol_id:volId,reason});
+    state.absences.push({id,week:wkNum,date,day,slot,vol_id:volId,reason});
+    document.getElementById('abs-reason').value='';
+    showToast('請假登記成功');
+    renderAbsenceList(); renderSchedule();
+  }catch(e){alert('登記失敗：'+e.message);}
+}
+
+function renderAbsenceList(){
+  if(!state.absences.length){document.getElementById('absence-list').innerHTML='<div class="empty">尚無請假紀錄</div>';return;}
+  const list=state.absences;
+  let html=`<div class="tbl-wrap"><table><thead><tr><th>週次</th><th>日期</th><th>時段</th><th>志工</th><th>原因</th><th>代班</th>${isAdmin?'<th></th>':''}</tr></thead><tbody>`;
+  list.slice().reverse().forEach(a=>{
+    const sub=state.substitutes.find(s=>s.absence_id===a.id);
+    html+=`<tr><td>第${a.week}週</td><td>${a.date}</td><td style="white-space:nowrap">${a.slot}</td><td>${getVolName(a.vol_id)}</td><td style="color:#888">${a.reason||'—'}</td>
+      <td>${sub?`<span class="badge badge-sub">${getVolName(sub.sub_vol_id)}</span>`:'<span style="font-size:11px;color:#DC2626">待代班</span>'}</td>
+      ${isAdmin?`<td><button class="btn btn-danger btn-sm" onclick="deleteAbsence('${a.id}')">刪除</button></td>`:''}
+    </tr>`;
+  });
+  html+=`</tbody></table></div>`;
+  document.getElementById('absence-list').innerHTML=html;
+}
+
+async function deleteAbsence(id){
+  if(!confirm('確定刪除此請假？'))return;
+  try{
+    await dbDel('substitutes',`?absence_id=eq.${id}`);
+    await dbDel('absences',`?id=eq.${id}`);
+    state.absences=state.absences.filter(a=>a.id!==id);
+    state.substitutes=state.substitutes.filter(s=>s.absence_id!==id);
+    showToast('已刪除');renderAbsenceList();renderSchedule();
+  }catch(e){alert('刪除失敗：'+e.message);}
+}
+
+// ── 代班 ─────────────────────────────────────────
+function renderSubForm(){
+  const pending=state.absences.filter(a=>!state.substitutes.find(s=>s.absence_id===a.id));
+  document.getElementById('sub-absent-select').innerHTML='<option value="">— 選擇請假紀錄 —</option>'+
+    pending.map(a=>`<option value="${a.id}">第${a.week}週 ${a.date} ${a.slot} ｜ ${getVolName(a.vol_id)}請假</option>`).join('');
+  const el=document.getElementById('sub-vol');
+  el.innerHTML='<option value="">— 請選擇代班志工 —</option>'+
+    state.volunteers.map(v=>`<option value="${v.id}">${v.name}</option>`).join('');
+}
+function updateSubInfo(){
+  const id=document.getElementById('sub-absent-select').value;
+  const a=state.absences.find(x=>x.id===id);
+  document.getElementById('sub-absent-info').textContent=a?`代替：第${a.week}週 ${a.date} ${a.slot} 的 ${getVolName(a.vol_id)}`:'';
+}
+async function addSubstitute(){
+  const absId=document.getElementById('sub-absent-select').value;
+  const subVolId=document.getElementById('sub-vol').value;
+  if(!absId){alert('請選擇請假紀錄');return;}
+  const a=state.absences.find(x=>x.id===absId);
+  if(!a)return;
+  if(state.substitutes.find(s=>s.absence_id===absId)){alert('此請假已有代班志工');return;}
+  try{
+    const id='s'+Date.now();
+    await dbPost('substitutes',{id,absence_id:absId,week:a.week,date:a.date,slot:a.slot,absent_vol_id:a.vol_id,sub_vol_id:subVolId});
+    state.substitutes.push({id,absence_id:absId,week:a.week,date:a.date,slot:a.slot,absent_vol_id:a.vol_id,sub_vol_id:subVolId});
+    showToast('代班登記成功');renderSubForm();renderSubList();renderSchedule();
+  }catch(e){alert('登記失敗：'+e.message);}
+}
+function renderSubList(){
+  if(!state.substitutes.length){document.getElementById('substitute-list').innerHTML='<div class="empty">尚無代班紀錄</div>';return;}
+  const list=state.substitutes;
+  let html=`<div class="tbl-wrap"><table><thead><tr><th>週次</th><th>日期</th><th>時段</th><th>請假志工</th><th>代班志工</th>${isAdmin?'<th></th>':''}</tr></thead><tbody>`;
+  list.slice().reverse().forEach(s=>{
+    html+=`<tr><td>第${s.week}週</td><td>${s.date}</td><td style="white-space:nowrap">${s.slot}</td>
+      <td><span class="badge badge-absent">${getVolName(s.absent_vol_id)}</span></td>
+      <td><span class="badge badge-sub">${getVolName(s.sub_vol_id)}</span></td>
+      ${isAdmin?`<td><button class="btn btn-danger btn-sm" onclick="deleteSub('${s.id}')">刪除</button></td>`:''}
+    </tr>`;
+  });
+  html+=`</tbody></table></div>`;
+  document.getElementById('substitute-list').innerHTML=html;
+}
+async function deleteSub(id){
+  if(!confirm('確定刪除此代班？'))return;
+  try{
+    await dbDel('substitutes',`?id=eq.${id}`);
+    state.substitutes=state.substitutes.filter(s=>s.id!==id);
+    showToast('已刪除');renderSubList();renderSubForm();renderSchedule();
+  }catch(e){alert('刪除失敗：'+e.message);}
+}
+
+// ── 志工管理 ──────────────────────────────────────
+function renderVolunteers(){
+  document.getElementById('set-start-date').value=state.settings.startDate;
+  document.getElementById('set-total-weeks').value=state.settings.totalWeeks;
+  updateSemRng();
+  fillWeekSelect('new-vol-start',false);
+  let vhtml=`<div class="tbl-wrap"><table><thead><tr><th>姓名</th><th>加入週次</th><th>離開週次</th><th></th></tr></thead><tbody>`;
+  state.volunteers.forEach(v=>{
+    vhtml+=`<tr><td style="font-weight:500">${v.name}</td><td>第${v.start_week}週</td><td>${v.end_week?`第${v.end_week}週`:'—'}</td>
+      <td style="display:flex;gap:6px">
+        <button class="btn btn-sm" onclick="setEndWeek('${v.id}')">設定離開</button>
+        <button class="btn btn-danger btn-sm" onclick="removeVolunteer('${v.id}')">移除</button>
+      </td></tr>`;
+  });
+  vhtml+=`</tbody></table></div>`;
+  document.getElementById('vol-list').innerHTML=vhtml;
+}
+function updateSemRng(){
+  const sd=document.getElementById('set-start-date').value;
+  const tw=parseInt(document.getElementById('set-total-weeks').value)||20;
+  if(!sd)return;
+  const w=generateWeeks(sd,tw);
+  if(w.length) document.getElementById('semester-range').textContent=`${w[0].days[0].full} ～ ${w[tw-1].days[4].full}`;
+}
+async function saveSettings(){
+  const sd=document.getElementById('set-start-date').value;
+  const tw=parseInt(document.getElementById('set-total-weeks').value)||20;
+  try{
+    await dbPatch('settings',{value:sd,updated_at:new Date().toISOString()},'?key=eq.startDate');
+    await dbPatch('settings',{value:String(tw),updated_at:new Date().toISOString()},'?key=eq.totalWeeks');
+    state.settings.startDate=sd; state.settings.totalWeeks=tw;
+    state.weeks=generateWeeks(sd,tw);
+    fillWeekSelect('filter-week',true);
+    updateSemRng(); showToast('學期設定已儲存'); renderSchedule();
+  }catch(e){alert('儲存失敗：'+e.message);}
+}
+async function addVolunteer(){
+  const name=document.getElementById('new-vol-name').value.trim();
+  const sw=parseInt(document.getElementById('new-vol-start').value)||1;
+  if(!name){alert('請輸入姓名');return;}
+  if(state.volunteers.find(v=>v.name===name)){alert('已有同名志工');return;}
+  try{
+    const id='v'+Date.now();
+    await dbPost('volunteers',{id,name,start_week:sw});
+    state.volunteers.push({id,name,start_week:sw});
+    document.getElementById('new-vol-name').value='';
+    showToast(`已新增「${name}」`); renderVolunteers();
+  }catch(e){alert('新增失敗：'+e.message);}
+}
+async function setEndWeek(id){
+  const v=state.volunteers.find(x=>x.id===id); if(!v)return;
+  const w=prompt(`設定「${v.name}」的離開週次（留空清除）：`);
+  if(w===null)return;
+  try{
+    await dbPatch('volunteers',{end_week:w?parseInt(w):null},`?id=eq.${id}`);
+    v.end_week=w?parseInt(w):null;
+    showToast('已更新'); renderVolunteers();
+  }catch(e){alert('更新失敗：'+e.message);}
+}
+async function removeVolunteer(id){
+  const v=state.volunteers.find(x=>x.id===id);
+  if(!v||!confirm(`確定移除「${v.name}」？`))return;
+  try{
+    await dbDel('volunteers',`?id=eq.${id}`);
+    state.volunteers=state.volunteers.filter(x=>x.id!==id);
+    state.absences=state.absences.filter(a=>a.vol_id!==id);
+    state.substitutes=state.substitutes.filter(s=>s.absent_vol_id!==id&&s.sub_vol_id!==id);
+    showToast(`已移除「${v.name}」`); renderVolunteers();
+  }catch(e){alert('移除失敗：'+e.message);}
+}
+
+// ── 時數統計 ──────────────────────────────────────
+function renderStats(){
+  const vols=state.volunteers;
+  let ta=0,ts=0;
+  const rows=vols.map(v=>{
+    const ma=state.absences.filter(a=>a.vol_id===v.id);
+    const ms=state.substitutes.filter(s=>s.sub_vol_id===v.id);
+    const ah=ma.reduce((s,a)=>s+(SLOT_HRS[a.slot]||0),0);
+    const sh=ms.reduce((s,x)=>s+(SLOT_HRS[x.slot]||0),0);
+    ta+=ah; ts+=sh;
+    return{v,ma,ms,ah,sh};
+  });
+  document.getElementById('stats-metrics').innerHTML=`
+    <div class="metric"><div class="metric-num">${state.volunteers.length}</div><div class="metric-label">志工人數</div></div>
+    <div class="metric"><div class="metric-num">${state.settings.totalWeeks}</div><div class="metric-label">學期週數</div></div>
+    <div class="metric"><div class="metric-num">${state.absences.length}</div><div class="metric-label">請假次數</div></div>
+    <div class="metric"><div class="metric-num">${ta.toFixed(1)}h</div><div class="metric-label">請假時數</div></div>
+    <div class="metric"><div class="metric-num">${state.substitutes.length}</div><div class="metric-label">代班次數</div></div>
+    <div class="metric"><div class="metric-num">${ts.toFixed(1)}h</div><div class="metric-label">代班時數</div></div>
+  `;
+  let html=`<div class="tbl-wrap"><table><thead><tr><th>志工</th><th>請假次</th><th>請假時數</th><th>代班次</th><th>代班時數</th><th>淨差值（代班－請假）</th></tr></thead><tbody>`;
+  rows.forEach(({v,ma,ms,ah,sh})=>{
+    const net=sh-ah;
+    html+=`<tr><td style="font-weight:500">${v.name}</td><td>${ma.length}</td><td>${ah.toFixed(1)}h</td><td>${ms.length}</td><td>${sh.toFixed(1)}h</td>
+      <td style="font-weight:500;color:${net>=0?'#065F46':'#DC2626'}">${net>=0?'+':''}${net.toFixed(1)}h</td></tr>`;
+  });
+  // 合計列
+  const totalNet=ts-ta;
+  html+=`<tr style="background:#f8f8f7;font-weight:600;border-top:2px solid #d0d0cc">
+    <td>合計</td>
+    <td>${state.absences.length}</td>
+    <td>${ta.toFixed(1)}h</td>
+    <td>${state.substitutes.length}</td>
+    <td>${ts.toFixed(1)}h</td>
+    <td style="color:${totalNet>=0?'#065F46':'#DC2626'}">${totalNet>=0?'+':''}${totalNet.toFixed(1)}h</td>
+  </tr>`;
+  html+=`</tbody></table></div>`;
+  document.getElementById('stats-detail').innerHTML=html;
+}
+
+function exportStats(){
+  const vols=state.volunteers;
+  const rows=[['志工姓名','請假次數','請假時數(h)','代班次數','代班時數(h)','淨差值(h)']];
+  let ta=0,ts=0,tac=0,tsc=0;
+  vols.forEach(v=>{
+    const ma=state.absences.filter(a=>a.vol_id===v.id);
+    const ms=state.substitutes.filter(s=>s.sub_vol_id===v.id);
+    const ah=ma.reduce((s,a)=>s+(SLOT_HRS[a.slot]||0),0);
+    const sh=ms.reduce((s,x)=>s+(SLOT_HRS[x.slot]||0),0);
+    const net=sh-ah;
+    ta+=ah; ts+=sh; tac+=ma.length; tsc+=ms.length;
+    rows.push([v.name,ma.length,ah.toFixed(1),ms.length,sh.toFixed(1),(net>=0?'+':'')+net.toFixed(1)]);
+  });
+  const totalNet=ts-ta;
+  rows.push(['合計',tac,ta.toFixed(1),tsc,ts.toFixed(1),(totalNet>=0?'+':'')+totalNet.toFixed(1)]);
+  rows.push([]);
+  rows.push(['【請假明細】']);
+  rows.push(['志工','週次','日期','時段','原因','代班志工']);
+  state.absences.forEach(a=>{
+    const sub=state.substitutes.find(s=>s.absence_id===a.id);
+    rows.push([getVolName(a.vol_id),'第'+a.week+'週',a.date,a.slot,a.reason||'',sub?getVolName(sub.sub_vol_id):'待代班']);
+  });
+  const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
+  const bom='\uFEFF';
+  const blob=new Blob([bom+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');
+  const dateStr=new Date().toISOString().slice(0,10);
+  a.href=URL.createObjectURL(blob);
+  a.download='志工時數統計_'+dateStr+'.csv';
+  a.click();
+  showToast('統計資料已匯出');
+}
+
+async function clearSemesterRecords(){
+  if(!confirm('確定要清空本學期所有請假與代班紀錄？\n\n班表排班設定、志工名單、學期設定將完整保留。\n此操作無法復原。')) return;
+  if(!confirm('再次確認：清空後資料將永久刪除，是否繼續？')) return;
+  try{
+    await dbDel('substitutes','?created_at=gte.1970-01-01');
+    await dbDel('absences','?created_at=gte.1970-01-01');
+    state.absences=[];
+    state.substitutes=[];
+    showToast('學期請假與代班紀錄已清空');
+    renderStats();
+    renderSchedule();
+  }catch(e){alert('清空失敗：'+e.message);}
+}
+
+// ── 啟動 ──────────────────────────────────────────
+if(SUPABASE_URL.includes('填入')){
+  document.getElementById('no-config-warn').style.display='block';
+} else {
+  loadAll();
+}
+</script>
+</body>
+</html>
