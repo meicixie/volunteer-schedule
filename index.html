@@ -72,8 +72,17 @@ lbl{font-size:13px;color:#666;display:inline-block;min-width:55px}
 
 <script>
 const SUPABASE_URL = 'https://nvjdepggnyeoblcpyqbz.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52amRlcGdnbnllb2JsY3B5cWJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NDc4NDcsImV4cCI6MjA5ODAyMzg0N30.afRQUJtveO5dpFX6xqj8HqrDu8jybu6jxVWXI5BUWbk';
-const ADMIN_PASSWORD = 'klps126';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
+
+// 這裡改成儲存加密後的密碼鎖，別人看到這串亂碼也猜不出原始密碼
+const ADMIN_PASSWORD_HASH = 'efcc63be91307b9e67fb635e9c0f99479e0a2944b08dc22bf3532c69fc70c1a8';
+
+// 引入瀏覽器內建的加密計算工具
+async function sha256(message) {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
 </script>
 
 <div class="topbar">
@@ -336,8 +345,13 @@ function openAdminModal(){
   setTimeout(()=>document.getElementById('admin-pw-input').focus(),100);
 }
 function closeAdminModal(){document.getElementById('admin-modal').classList.remove('open');}
-function checkAdmin(){
-  if(document.getElementById('admin-pw-input').value===ADMIN_PASSWORD){
+async function checkAdmin(){
+  // 1. 取得使用者輸入的密碼
+  const inputPassword = document.getElementById('admin-pw-input').value;
+  // 2. 將輸入的密碼也轉換成 SHA-256 亂碼
+  const inputHash = await sha256(inputPassword);
+  // 3. 比對兩組亂碼是否相同
+  if(inputHash === ADMIN_PASSWORD_HASH){
     isAdmin=true; closeAdminModal();
     document.querySelectorAll('.admin-only').forEach(el=>el.style.display='');
     document.getElementById('role-badge').innerHTML='<span class="role-badge"><i class="ti ti-shield"></i> 管理員</span>';
