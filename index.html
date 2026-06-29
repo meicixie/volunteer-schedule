@@ -73,14 +73,7 @@ lbl{font-size:13px;color:#666;display:inline-block;min-width:55px}
 <script>
 const SUPABASE_URL = 'https://nvjdepggnyeoblcpyqbz.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im52amRlcGdnbnllb2JsY3B5cWJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI0NDc4NDcsImV4cCI6MjA5ODAyMzg0N30.afRQUJtveO5dpFX6xqj8HqrDu8jybu6jxVWXI5BUWbk';
-const ADMIN_PASSWORD_HASH = '9e4f5d1bd28c89b703e3cc4ba0f73f27f0170a7812ea1134bdfbc65a1262d1ef';
-
-// 引入瀏覽器內建的加密計算工具
-async function sha256(message) {
-  const msgBuffer = new TextEncoder().encode(message);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-  return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
+const ENCRYPTED_PW = 'a2xwczEyNg==';
 </script>
 
 <div class="topbar">
@@ -343,13 +336,13 @@ function openAdminModal(){
   setTimeout(()=>document.getElementById('admin-pw-input').focus(),100);
 }
 function closeAdminModal(){document.getElementById('admin-modal').classList.remove('open');}
-async function checkAdmin(){
-  // 1. 取得使用者輸入的密碼
+function checkAdmin(){
+  // 1. 取得使用者輸入的密碼，並直接轉成 Base64 影子
   const inputPassword = document.getElementById('admin-pw-input').value;
-  // 2. 將輸入的密碼也轉換成 SHA-256 亂碼
-  const inputHash = await sha256(inputPassword);
-  // 3. 比對兩組亂碼是否相同
-  if(inputHash === ADMIN_PASSWORD_HASH){
+  const inputHash = btoa(unescape(encodeURIComponent(inputPassword)));
+
+  // 2. 比對影子是否相同
+  if(inputHash === ENCRYPTED_PW){
     isAdmin=true; closeAdminModal();
     document.querySelectorAll('.admin-only').forEach(el=>el.style.display='');
     document.getElementById('role-badge').innerHTML='<span class="role-badge"><i class="ti ti-shield"></i> 管理員</span>';
